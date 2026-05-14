@@ -242,16 +242,16 @@ class Player {
 let playerA, playerB;
 
 function initPlayers() {
-  // W=87, A=65, S=83, D=68
-  playerA = new Player('A', 5, 5, 87, 83, 65, 68);
-  // 방향키
-  playerB = new Player('B', ROWS - 6, COLS - 6, 38, 40, 37, 39);
+  // 맵 중앙 공동 시작 영역
+  const midR = Math.floor(ROWS / 2);
+  const midC = Math.floor(COLS / 2);
 
-  // 시작 영역 부여
-  for (let r = 3; r <= 7; r++)
-    for (let c = 3; c <= 7; c++)
-      setOwner(r, c, OWNER_TEAM);
-  for (let r = ROWS-8; r <= ROWS-4; r++)
-    for (let c = COLS-8; c <= COLS-4; c++)
+  // A: 중앙 왼쪽, B: 중앙 오른쪽 (나란히 출발)
+  playerA = new Player('A', midR, midC - 2, 87, 83, 65, 68);
+  playerB = new Player('B', midR, midC + 2, 38, 40, 37, 39);
+
+  // 공동 시작 영역 (중앙 9×5 블록)
+  for (let r = midR - 2; r <= midR + 2; r++)
+    for (let c = midC - 4; c <= midC + 4; c++)
       setOwner(r, c, OWNER_TEAM);
 }
