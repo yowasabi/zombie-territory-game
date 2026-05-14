@@ -22,7 +22,7 @@ function resetGame() {
   initGrid();
   initZombies();
   initPlayers();
-  initTiles(this); // this = p5 instance (global mode에서 동작)
+  initTiles(this);
   gameTimer = GAME_TOTAL_TIME * FRAME_RATE;
   betrayalTriggered = false;
   winner = null;
@@ -61,15 +61,11 @@ function draw() {
   if (!betrayalTriggered && timeLeftSec <= BETRAYAL_TRIGGER_TIME) {
     betrayalTriggered = true;
     phase = PHASE_BETRAYAL;
-    // Voronoi 분할
     voronoiSplit({ r: playerA.r, c: playerA.c }, { r: playerB.r, c: playerB.c });
-    // 플레이어 owner 변경
     playerA.setPhase(PHASE_BETRAYAL);
     playerB.setPhase(PHASE_BETRAYAL);
-    // 꼬리 영역도 개인 소유로 재색칠
     for (const t of playerA.tail) setOwner(t.r, t.c, OWNER_A);
     for (const t of playerB.tail) setOwner(t.r, t.c, OWNER_B);
-    // 연출
     showBetrayalAnnounce(this);
   }
 
@@ -87,18 +83,12 @@ function draw() {
   _checkEndConditions(timeLeftSec);
 
   // ── 렌더링 ──
-  // 그리드
   drawGrid(this);
-  // 특수 타일
   drawTiles(this);
-  // 좀비
   drawZombies(this);
-  // 플레이어
   playerA.draw(this);
   playerB.draw(this);
-  // 배신 연출
   drawBetrayalAnnounce(this);
-  // HUD
   const counts = countTiles();
   drawUI(this, phase, timeLeftSec, counts);
 }
@@ -126,14 +116,8 @@ function _checkEndConditions(timeLeftSec) {
     }
   }
 
-  // 협력 페이즈에서 한 명 사망 → 팀 패배
-  if (phase === PHASE_COOP) {
-    if (!playerA.alive || !playerB.alive) {
-      winner = 'zombie';
-      phase = PHASE_END;
-      return;
-    }
-  }
+  // 협력 페이즈에서 둘 다 사망해야 팀 패배 (한 명은 계속 진행)
+  // (두 플레이어 모두 사망은 위 _endGame('both_dead')에서 처리)
 }
 
 function _endGame(reason) {
@@ -151,19 +135,14 @@ function _endGame(reason) {
 
 // ── 키 입력 ──
 function keyPressed() {
-  // 로비 → 게임 시작
-  if (phase === PHASE_LOBBY && keyCode === 32) { // SPACE
+  if (phase === PHASE_LOBBY && keyCode === 32) {
     phase = PHASE_COOP;
     return;
   }
-
-  // 재시작
   if ((phase === PHASE_END) && (key === 'r' || key === 'R' || keyCode === 82)) {
     resetGame();
     return;
   }
-
-  // 게임 중 플레이어 키 입력
   if (phase === PHASE_COOP || phase === PHASE_BETRAYAL) {
     playerA.handleKeyPressed(keyCode);
     playerB.handleKeyPressed(keyCode);
@@ -175,7 +154,6 @@ function mousePressed() {
   if (phase === PHASE_END) {
     const cx = CANVAS_W / 2;
     const cy = CANVAS_H / 2;
-    // 재시작 버튼 영역
     if (mouseX > cx - 70 && mouseX < cx + 70 && mouseY > cy + 65 && mouseY < cy + 101) {
       resetGame();
     }
