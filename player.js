@@ -9,9 +9,9 @@ class Player {
     this.r = startR;
     this.c = startC;
     this.dr = 0;
-    this.dc = (id === 'A') ? 1 : -1; // 초기 방향
-    this.nextDr = this.dr;
-    this.nextDc = this.dc;
+    this.dc = 0; // 초기 정지 상태 (키 입력 전까지 이동 안 함)
+    this.nextDr = 0;
+    this.nextDc = 0;
 
     this.keys = { up: keyUp, down: keyDown, left: keyLeft, right: keyRight };
 
@@ -246,8 +246,9 @@ function initPlayers() {
   const midR = Math.floor(ROWS / 2);
   const midC = Math.floor(COLS / 2);
 
-  // A: 중앙 왼쪽, B: 중앙 오른쪽 (나란히 출발)
+  // W=87(위), S=83(아래), A=65(왼쪽), D=68(오른쪽)
   playerA = new Player('A', midR, midC - 2, 87, 83, 65, 68);
+  // ↑=38(위), ↓=40(아래), ←=37(왼쪽), →=39(오른쪽)
   playerB = new Player('B', midR, midC + 2, 38, 40, 37, 39);
 
   // 공동 시작 영역 (중앙 9×5 블록)
