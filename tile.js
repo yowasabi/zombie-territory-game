@@ -112,8 +112,7 @@ function applyTileEffect(tile, player, zombies, phase, p) {
       break;
 
     case TILE_TYPE_ZOMBIE_SPAWN:
-      // 좀비 3마리 소환 (밟은 플레이어 근처)
-      for (let i = 0; i < 3; i++) {
+      //좀비 타일 밟으면 좀비 한 개 생성
         const spawnR = Math.min(ROWS - 1, Math.max(0, tile.r + Math.floor(p.random(-4, 5))));
         const spawnC = Math.min(COLS - 1, Math.max(0, tile.c + Math.floor(p.random(-4, 5))));
         zombies.push(new Zombie(spawnR, spawnC));
