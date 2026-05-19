@@ -3,8 +3,8 @@
 // =============================================
 
 const TILE_SIZE = 8;          // 타일 하나의 픽셀 크기
-const COLS = 150;               // 가로 타일 수
-const ROWS = 150;               // 세로 타일 수
+const COLS = 100;               // 가로 타일 수
+const ROWS = 100;               // 세로 타일 수
 const CANVAS_W = COLS * TILE_SIZE;  // 800
 const CANVAS_H = ROWS * TILE_SIZE;  // 800
 
@@ -60,4 +60,4 @@ const COLOR_EMPTY  = '#1a1a1a';  // 빈 타일
 const COLOR_GRID   = '#222222';  // 그리드 선
 
 // 게임 프레임레이트
-const FRAME_RATE = 30;
+const FRAME_RATE = 20;
