@@ -132,38 +132,15 @@ let zombies = [];
 
 function initZombies() {
   zombies = [];
-  for (let i = 0; i < ZOMBIE_COUNT; i++) {
-    const r = Math.floor(Math.random() * (ROWS - 8)) + 4;
-    const c = Math.floor(Math.random() * (COLS - 8)) + 4;
-    zombies.push(new Zombie(r, c));
+  const spawnPositions = [
+    [3, 3], [3, COLS-4], [ROWS-4, 3], [ROWS-4, COLS-4],
+    [ROWS/2, 3], [3, COLS/2]
+  ];
+  for (let i = 0; i < Math.min(ZOMBIE_COUNT, spawnPositions.length); i++) {
+    zombies.push(new Zombie(spawnPositions[i][0], spawnPositions[i][1]));
   }
 }
 
-// 20초마다 좀비 위치 재배치
-const ZOMBIE_RELOCATE_INTERVAL = 20 * 30; // 20초 * 30fps = 600프레임
-let zombieRelocateTimer = 0;
-
-function updateZombies(players, p) {
-  // 20초마다 위치 재배치
-  zombieRelocateTimer++;
-  if (zombieRelocateTimer >= ZOMBIE_RELOCATE_INTERVAL) {
-    zombieRelocateTimer = 0;
-    // 부족한 좀비 채우기 + 전체 위치 재배치
-    zombies = [];
-    for (let i = 0; i < ZOMBIE_COUNT; i++) {
-      const r = Math.floor(Math.random() * (ROWS - 8)) + 4;
-      const c = Math.floor(Math.random() * (COLS - 8)) + 4;
-      zombies.push(new Zombie(r, c));
-    }
-  }
-
-  for (const z of zombies) {
-    z.update(players, p);
-  }
-  for (let i = zombies.length - 1; i >= 0; i--) {
-    if (!zombies[i].alive) zombies.splice(i, 1);
-  }
-}
 
 function updateZombies(players, p) {
   for (const z of zombies) {
