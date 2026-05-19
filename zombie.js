@@ -8,15 +8,12 @@ class Zombie {
     this.c = c;
     this.dr = 0;
     this.dc = 1;
-    // 소수점 누적 이동 (속도 제어)
     this.moveAccum = 0;
-    this.speed = ZOMBIE_SPEED; // 초당 타일
-    // 꼬리: 귀환 전 지나온 타일
+    this.speed = ZOMBIE_SPEED;
     this.tail = [];
     this.alive = true;
   }
 
-  // 매 프레임 호출
   update(players, p) {
     if (!this.alive) return;
 
@@ -33,13 +30,11 @@ class Zombie {
     if (p.random() < ZOMBIE_RANDOM_CHANCE) {
       this._randomDir(p);
     } else {
-      // 살아있는 플레이어 중 가장 가까운 꼬리 타일을 향해 이동
       let targetR = this.r, targetC = this.c;
       let minDist = Infinity;
 
       for (const pl of players) {
         if (!pl.alive) continue;
-        // 꼬리가 있으면 꼬리 타일 타겟, 없으면 플레이어 본체
         const targets = pl.tail.length > 0 ? pl.tail : [{ r: pl.r, c: pl.c }];
         for (const t of targets) {
           const d = Math.abs(t.r - this.r) + Math.abs(t.c - this.c);
@@ -51,12 +46,10 @@ class Zombie {
         }
       }
 
-      // 목표 방향으로 이동 (맨해튼)
       const dr = Math.sign(targetR - this.r);
       const dc = Math.sign(targetC - this.c);
 
       if (dr !== 0 && dc !== 0) {
-        // 대각이면 하나 선택
         if (p.random() < 0.5) { this.dr = dr; this.dc = 0; }
         else { this.dr = 0; this.dc = dc; }
       } else if (dr !== 0) {
@@ -77,19 +70,25 @@ class Zombie {
       return;
     }
 
-    // 꼬리 관리 (좀비도 꼬리를 가짐 — 플레이어가 밟으면 좀비 꼬리도 위험 판정)
-    const curKey = `${this.r},${this.c}`;
+    // 꼬리 관리
     const isOnOwned = getOwner(this.r, this.c) === OWNER_ZOMBIE;
 
     if (!isOnOwned) {
-      // 꼬리 추가
       this.tail.push({ r: this.r, c: this.c });
     } else {
-      // 이미 소유 영역 귀환 → 꼬리 닫기
       if (this.tail.length > 0) {
         const tailSet = new Set(this.tail.map(t => `${t.r},${t.c}`));
         floodFillEnclosed(tailSet, OWNER_ZOMBIE, null);
         this.tail = [];
+      }
+    }
+
+    // ── 플레이어 꼬리 충돌 → 좀비 사망 ──
+    for (const pl of players) {
+      if (!pl.alive) continue;
+      if (pl.tail.some(t => t.r === nr && t.c === nc)) {
+        this.alive = false;
+        return;
       }
     }
 
