@@ -208,7 +208,7 @@ function drawLobby(p) {
 
   p.textSize(14);
   p.fill(180);
-  p.text('2인 협력 → 배신 영역 점령 게임', cx, cy - 75);
+  p.text('2인 협력 → 배신 영역 점령 게임', cx, cy - 68);
 
   // 조작법
   p.textSize(13);
