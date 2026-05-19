@@ -1,3 +1,10 @@
+지금 코드에서 좀비 꼬리가 안 보이는 이유는 좀비가 자기 영역(`OWNER_ZOMBIE`)을 밟는 순간 바로 꼬리를 닫아버리기 때문이에요. 3×3 집을 만들어줬는데 좀비가 집 안에서 맴돌면서 계속 꼬리를 바로 닫아버리는 거예요.
+
+플레이어 코드를 그대로 따라가서 다시 짜볼게요.
+
+### 수정할 파일: `zombie.js` 전체
+
+```js
 // =============================================
 // zombie.js — 좀비 생성 & 매 프레임 이동 AI
 // =============================================
@@ -12,10 +19,12 @@ class Zombie {
     this.speed = ZOMBIE_SPEED;
     this.tail = [];
     this.alive = true;
+    this.homeR = r;
+    this.homeC = c;
 
-    // 시작 영역을 3×3으로 설정
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dc = -1; dc <= 1; dc++) {
+    // 시작 영역을 5×5로 설정
+    for (let dr = -2; dr <= 2; dr++) {
+      for (let dc = -2; dc <= 2; dc++) {
         setOwner(r + dr, c + dc, OWNER_ZOMBIE);
       }
     }
@@ -77,20 +86,20 @@ class Zombie {
       return;
     }
 
-    // 꼬리 관리 (플레이어와 동일한 원리)
-    const isOnOwned = getOwner(this.r, this.c) === OWNER_ZOMBIE;
+    // ── 꼬리 관리 (플레이어와 완전히 동일한 원리) ──
+    const currentOwner = getOwner(this.r, this.c);
+    const onOwnedTile = (currentOwner === OWNER_ZOMBIE);
 
-    if (!isOnOwned) {
-      // 소유 영역 밖: 꼬리 추가
-      this.tail.push({ r: this.r, c: this.c });
-    } else {
-      // 소유 영역 귀환: 꼬리 닫기 → flood fill로 영역 확장
+    if (onOwnedTile) {
+      // 소유 영역 안으로 돌아옴 → 꼬리 닫기
       if (this.tail.length > 0) {
         const tailSet = new Set(this.tail.map(t => `${t.r},${t.c}`));
         floodFillEnclosed(tailSet, OWNER_ZOMBIE, null);
         this.tail = [];
       }
-      setOwner(this.r, this.c, OWNER_ZOMBIE);
+    } else {
+      // 소유 영역 밖 → 꼬리 추가
+      this.tail.push({ r: this.r, c: this.c });
     }
 
     // ── 플레이어 꼬리 충돌 → 좀비 사망 ──
@@ -98,6 +107,11 @@ class Zombie {
       if (!pl.alive) continue;
       if (pl.tail.some(t => t.r === nr && t.c === nc)) {
         this.alive = false;
+        // 꼬리 영역 반환
+        for (const t of this.tail) {
+          setOwner(t.r, t.c, OWNER_NONE);
+        }
+        this.tail = [];
         return;
       }
     }
@@ -116,11 +130,11 @@ class Zombie {
   draw(p) {
     if (!this.alive) return;
 
-    // 꼬리 그리기
+    // 꼬리 그리기 (플레이어와 동일하게)
     p.noStroke();
-    p.fill(120, 50, 180, 160);
+    p.fill(120, 50, 180, 200);
     for (const t of this.tail) {
-      p.rect(t.c * TILE_SIZE + 4, t.r * TILE_SIZE + 4, TILE_SIZE - 8, TILE_SIZE - 8, 2);
+      p.rect(t.c * TILE_SIZE + 1, t.r * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2, 2);
     }
 
     // 본체 그리기
@@ -128,11 +142,11 @@ class Zombie {
     const y = this.r * TILE_SIZE;
     p.fill('#AB47BC');
     p.noStroke();
-    p.rect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4, 4);
+    p.rect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2, 3);
     // 눈
     p.fill(255, 50, 50);
-    p.ellipse(x + 7, y + 8, 4, 4);
-    p.ellipse(x + 13, y + 8, 4, 4);
+    p.ellipse(x + TILE_SIZE * 0.3, y + TILE_SIZE * 0.4, 3, 3);
+    p.ellipse(x + TILE_SIZE * 0.7, y + TILE_SIZE * 0.4, 3, 3);
   }
 }
 
@@ -142,8 +156,8 @@ let zombies = [];
 function initZombies() {
   zombies = [];
   const spawnPositions = [
-    [3, 3], [3, COLS-4], [ROWS-4, 3], [ROWS-4, COLS-4],
-    [ROWS/2, 3], [3, COLS/2]
+    [5, 5], [5, COLS-6], [ROWS-6, 5], [ROWS-6, COLS-6],
+    [Math.floor(ROWS/2), 5], [5, Math.floor(COLS/2)]
   ];
   for (let i = 0; i < Math.min(ZOMBIE_COUNT, spawnPositions.length); i++) {
     zombies.push(new Zombie(spawnPositions[i][0], spawnPositions[i][1]));
@@ -165,3 +179,6 @@ function drawZombies(p) {
     z.draw(p);
   }
 }
+```
+
+통째로 붙여넣으세요!
