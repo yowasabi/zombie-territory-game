@@ -13,7 +13,7 @@ const GAME_TOTAL_TIME = 120;       // 전체 게임 시간 (2분)
 const BETRAYAL_TRIGGER_TIME = 60;  // 배신 타이머 발동 잔여 시간 (1분 남았을 때)
 
 // 플레이어 속도 (프레임당 타일 이동 — fractional, 30fps 기준)
-const PLAYER_SPEED = 5.5;        // 초당 타일 이동 수 (8 tiles/sec)
+const PLAYER_SPEED = 6.8;        // 초당 타일 이동 수 (8 tiles/sec)
 const BOOST_MULTIPLIER = 2.0;  // 속도 부스터 배율
 const BOOST_DURATION = 300;    // 부스터 지속 프레임 (10초 * 60fps... 30fps 기준 300프레임)
 // 30fps * 10sec = 300 frames
