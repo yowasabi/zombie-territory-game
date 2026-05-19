@@ -204,7 +204,7 @@ function drawLobby(p) {
   p.fill('#4CAF50');
   p.text('ZOMBIE SLIDE', cx, cy - 150);
   p.textSize(30);
-  p.text('DUO',cx,cy - 88);
+  p.text('DUO',cx,cy - 100);
 
   p.textSize(14);
   p.fill(180);
