@@ -141,7 +141,6 @@ function initZombies() {
   }
 }
 
-
 function updateZombies(players, p) {
   for (const z of zombies) {
     z.update(players, p);
