@@ -32,9 +32,9 @@ function updateTiles(p) {
 // 타입 가중치: bomb 40%, zombie_spawn 35%, boost_steel 25%
 const TILE_TYPES_WEIGHTED = [
   TILE_TYPE_BOMB,
-  TILE_TYPE_BOMB,
   TILE_TYPE_ZOMBIE_SPAWN,
-  TILE_TYPE_ZOMBIE_SPAWN,
+  TILE_TYPE_BOOST_STEEL,
+  TILE_TYPE_BOOST_STEEL,
   TILE_TYPE_BOOST_STEEL,
 ];
 
