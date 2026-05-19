@@ -22,7 +22,8 @@ function resetGame() {
   initGrid();
   initZombies();
   initPlayers();
-  initTiles(p);
+  specialTiles = [];
+  nextSpawnFrame = 0;
   gameTimer = GAME_TOTAL_TIME * FRAME_RATE;
   betrayalTriggered = false;
   winner = null;
