@@ -83,7 +83,7 @@ function drawTiles(p) {
     switch (tile.type) {
       case TILE_TYPE_BOMB:         icon = '💣'; break;
       case TILE_TYPE_ZOMBIE_SPAWN: icon = '🧟'; break;
-      case TILE_TYPE_BOOST_STEEL:  icon = '⚡'; break;
+      case TILE_TYPE_BOOST_STEEL:  icon = '💊'; break;
     }
     p.text(icon, x + TILE_SIZE / 2, y + TILE_SIZE / 2 + 1);
   }
