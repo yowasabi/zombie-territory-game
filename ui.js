@@ -200,10 +200,10 @@ function drawLobby(p) {
 
   // 제목
   p.textAlign(p.CENTER, p.CENTER);
-  p.textSize(36);
+  p.textSize(50);
   p.fill('#4CAF50');
-  p.text('ZOMBIE SLIDE', cx, cy - 130);
-  p.textSize(24);
+  p.text('ZOMBIE SLIDE', cx, cy - 150);
+  p.textSize(30);
   p.text('DUO',cx,cy - 88);
 
   p.textSize(14);
