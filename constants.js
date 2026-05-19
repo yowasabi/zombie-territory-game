@@ -20,7 +20,7 @@ const BOOST_DURATION = 300;    // 부스터 지속 프레임 (10초 * 60fps... 3
 const STEEL_TAIL_DURATION = 300; // 강철꼬리 지속 프레임 (10초)
 
 // 좀비
-const ZOMBIE_COUNT = 15;        // 초기 좀비 수
+const ZOMBIE_COUNT = 6;        // 초기 좀비 수
 const ZOMBIE_SPEED = 4.3;        // 좀비 초당 타일 이동 수
 const ZOMBIE_RANDOM_CHANCE = 0.03; // 랜덤 방향 전환 확률 (매 프레임)
 
