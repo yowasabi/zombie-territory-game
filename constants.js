@@ -25,9 +25,9 @@ const ZOMBIE_SPEED = 4.3;        // 좀비 초당 타일 이동 수
 const ZOMBIE_RANDOM_CHANCE = 0.03; // 랜덤 방향 전환 확률 (매 프레임)
 
 // 특수 타일
-const SPECIAL_TILE_INTERVAL_MIN = 450; // 최소 스폰 간격 (프레임, 15초)
-const SPECIAL_TILE_INTERVAL_MAX = 900; // 최대 스폰 간격 (프레임, 30초)
-const MAX_SPECIAL_TILES = 20;           // 동시 최대 특수 타일 수
+const SPECIAL_TILE_INTERVAL_MIN = 60; // 최소 스폰 간격 (프레임, 15초)
+const SPECIAL_TILE_INTERVAL_MAX = 150; // 최대 스폰 간격 (프레임, 30초)
+const MAX_SPECIAL_TILES = 30;           // 동시 최대 특수 타일 수
 
 // 영역 폭탄: 반경
 const BOMB_RADIUS = 3; // 타일 반경
