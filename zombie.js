@@ -12,6 +12,9 @@ class Zombie {
     this.speed = ZOMBIE_SPEED;
     this.tail = [];
     this.alive = true;
+
+    // 시작 위치를 집으로 설정
+    setOwner(r, c, OWNER_ZOMBIE);
   }
 
   update(players, p) {
@@ -74,13 +77,17 @@ class Zombie {
     const isOnOwned = getOwner(this.r, this.c) === OWNER_ZOMBIE;
 
     if (!isOnOwned) {
+      // 소유 영역 밖: 꼬리 추가
       this.tail.push({ r: this.r, c: this.c });
     } else {
+      // 소유 영역 귀환: 꼬리 닫기 → flood fill로 영역 확장
       if (this.tail.length > 0) {
         const tailSet = new Set(this.tail.map(t => `${t.r},${t.c}`));
         floodFillEnclosed(tailSet, OWNER_ZOMBIE, null);
         this.tail = [];
       }
+      // 현재 위치도 소유로
+      setOwner(this.r, this.c, OWNER_ZOMBIE);
     }
 
     // ── 플레이어 꼬리 충돌 → 좀비 사망 ──
