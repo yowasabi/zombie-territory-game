@@ -202,7 +202,9 @@ function drawLobby(p) {
   p.textAlign(p.CENTER, p.CENTER);
   p.textSize(36);
   p.fill('#4CAF50');
-  p.text('좀비 영역 전쟁', cx, cy - 120);
+  p.text('ZOMBIE SLIDE', cx, cy - 130);
+  p.textSize(24);
+  p.text('DUO',cx,cy - 88);
 
   p.textSize(14);
   p.fill(180);
