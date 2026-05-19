@@ -2,9 +2,9 @@
 // constants.js — 변하지 않는 숫자/설정값 모음
 // =============================================
 
-const TILE_SIZE = 20;          // 타일 하나의 픽셀 크기
-const COLS = 40;               // 가로 타일 수
-const ROWS = 40;               // 세로 타일 수
+const TILE_SIZE = 4;          // 타일 하나의 픽셀 크기
+const COLS = 200;               // 가로 타일 수
+const ROWS = 200;               // 세로 타일 수
 const CANVAS_W = COLS * TILE_SIZE;  // 800
 const CANVAS_H = ROWS * TILE_SIZE;  // 800
 
