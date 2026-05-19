@@ -116,7 +116,7 @@ function applyTileEffect(tile, player, zombies, phase, p) {
         const spawnR = Math.min(ROWS - 1, Math.max(0, tile.r + Math.floor(p.random(-4, 5))));
         const spawnC = Math.min(COLS - 1, Math.max(0, tile.c + Math.floor(p.random(-4, 5))));
         zombies.push(new Zombie(spawnR, spawnC));
-      }
+
       break;
 
     case TILE_TYPE_BOOST_STEEL:
