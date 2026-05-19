@@ -13,8 +13,12 @@ class Zombie {
     this.tail = [];
     this.alive = true;
 
-    // 시작 위치를 집으로 설정
-    setOwner(r, c, OWNER_ZOMBIE);
+    // 시작 영역을 3×3으로 설정
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        setOwner(r + dr, c + dc, OWNER_ZOMBIE);
+      }
+    }
   }
 
   update(players, p) {
@@ -73,7 +77,7 @@ class Zombie {
       return;
     }
 
-    // 꼬리 관리
+    // 꼬리 관리 (플레이어와 동일한 원리)
     const isOnOwned = getOwner(this.r, this.c) === OWNER_ZOMBIE;
 
     if (!isOnOwned) {
@@ -86,7 +90,6 @@ class Zombie {
         floodFillEnclosed(tailSet, OWNER_ZOMBIE, null);
         this.tail = [];
       }
-      // 현재 위치도 소유로
       setOwner(this.r, this.c, OWNER_ZOMBIE);
     }
 
