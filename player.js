@@ -67,15 +67,12 @@ class Player {
     let nr = this.r + this.dr;
     let nc = this.c + this.dc;
 
-    // 맵 경계: 죽지 않고 막힘 (반대편으로 이동 불가, 그냥 멈춤)
+    // 맵 경계: 이동 차단, 현재 위치 유지, 방향 초기화
     if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) {
-      nr = this.r;
-      nc = this.c;
-      // 방향 반전
-      this.nextDr = -this.dr;
-      this.nextDc = -this.dc;
-      this.dr = this.nextDr;
-      this.dc = this.nextDc;
+      this.nextDr = 0;
+      this.nextDc = 0;
+      this.dr = 0;
+      this.dc = 0;
       return;
     }
 
