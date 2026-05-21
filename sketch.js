@@ -1,15 +1,12 @@
-// =============================================
 // sketch.js — 게임의 심장
-//   setup(), draw() — 모든 함수를 여기서 호출
-// =============================================
 
-// ── 게임 상태 ──
 let phase = PHASE_LOBBY;
-let gameTimer = 0;       // 남은 프레임
+let gameTimer = 0;
 let betrayalTriggered = false;
 let winner = null;
+let soloTimer = 0;
+let deadPlayerId = null;
 
-// ── p5.js setup ──
 function setup() {
   createCanvas(CANVAS_W, CANVAS_H);
   frameRate(FRAME_RATE);
@@ -17,7 +14,6 @@ function setup() {
   resetGame();
 }
 
-// ── 게임 초기화 ──
 function resetGame() {
   initGrid();
   initZombies();
@@ -27,142 +23,155 @@ function resetGame() {
   betrayalTriggered = false;
   winner = null;
   betrayalAnnounceFade = 0;
+  soloTimer = 0;
+  deadPlayerId = null;
+  notifications = [];
   phase = PHASE_LOBBY;
 }
 
-// ── p5.js draw (메인 루프) ──
 function draw() {
   background(COLOR_EMPTY);
 
-  // ── 로비 ──
-  if (phase === PHASE_LOBBY) {
-    drawLobby(this);
-    return;
-  }
+  if (phase === PHASE_LOBBY) { drawLobby(this); return; }
 
-  // ── 게임 종료 ──
   if (phase === PHASE_END) {
-    drawGrid(this);
-    drawZombies(this);
-    playerA.draw(this);
-    playerB.draw(this);
-    const counts = countTiles();
-    drawResultScreen(this, counts, winner);
+    drawGrid(this); drawZombies(this);
+    playerA.draw(this); playerB.draw(this);
+    drawResultScreen(this, countTiles(), winner);
     return;
   }
 
-  // ── 게임 진행 중 (COOP / BETRAYAL) ──
-
-  // 1. 타이머 감소
+  // 게임 진행
   gameTimer--;
   const timeLeftSec = gameTimer / FRAME_RATE;
 
-  // 2. 배신 타이머 발동 체크
+  // 배신 타이머 발동
   if (!betrayalTriggered && timeLeftSec <= BETRAYAL_TRIGGER_TIME) {
-    betrayalTriggered = true;
-    phase = PHASE_BETRAYAL;
-    voronoiSplit({ r: playerA.r, c: playerA.c }, { r: playerB.r, c: playerB.c });
-    playerA.setPhase(PHASE_BETRAYAL);
-    playerB.setPhase(PHASE_BETRAYAL);
-    for (const t of playerA.tail) setOwner(t.r, t.c, OWNER_A);
-    for (const t of playerB.tail) setOwner(t.r, t.c, OWNER_B);
-    showBetrayalAnnounce(this);
+    _triggerBetrayal();
   }
 
-  // 3. 특수 타일 업데이트
+  // 솔로 페이즈 타이머
+  if (phase === PHASE_SOLO) {
+    soloTimer--;
+    if (soloTimer <= 0) _reviveDeadPlayer();
+  }
+
   updateTiles(this);
-
-  // 4. 좀비 업데이트
   updateZombies([playerA, playerB], this);
+  if (playerA.alive) playerA.update(playerB, zombies, phase, this);
+  if (playerB.alive) playerB.update(playerA, zombies, phase, this);
 
-  // 5. 플레이어 업데이트
-  playerA.update(playerB, zombies, phase, this);
-  playerB.update(playerA, zombies, phase, this);
-
-  // 6. 승패 판정
   _checkEndConditions(timeLeftSec);
 
-  // ── 렌더링 ──
   drawGrid(this);
   drawTiles(this);
   drawZombies(this);
-  playerA.draw(this);
-  playerB.draw(this);
+  playerA.draw(this); playerB.draw(this);
   drawBetrayalAnnounce(this);
-  const counts = countTiles();
-  drawUI(this, phase, timeLeftSec, counts);
+  drawUI(this, phase, timeLeftSec, countTiles());
+}
+
+function _triggerBetrayal() {
+  betrayalTriggered = true;
+  phase = PHASE_BETRAYAL;
+  const pA = playerA.alive ? {r:playerA.r,c:playerA.c} : {r:Math.floor(ROWS/2)-3,c:Math.floor(COLS/2)};
+  const pB = playerB.alive ? {r:playerB.r,c:playerB.c} : {r:Math.floor(ROWS/2)+3,c:Math.floor(COLS/2)};
+  voronoiSplit(pA, pB);
+  playerA.setPhase(PHASE_BETRAYAL);
+  playerB.setPhase(PHASE_BETRAYAL);
+  for (const t of playerA.tail) setOwner(t.r, t.c, OWNER_A);
+  for (const t of playerB.tail) setOwner(t.r, t.c, OWNER_B);
+  showBetrayalAnnounce(this);
 }
 
 function _checkEndConditions(timeLeftSec) {
   // 타이머 종료
-  if (gameTimer <= 0) {
-    _endGame('timer');
-    return;
+  if (gameTimer <= 0) { _endGame('timer'); return; }
+
+  // 둘 다 사망
+  if (!playerA.alive && !playerB.alive) { _endGame('both_dead'); return; }
+
+  // 협력/솔로 페이즈: 한 명 사망 처리
+  if (phase === PHASE_COOP) {
+    if (!playerA.alive || !playerB.alive) {
+      phase = PHASE_SOLO;
+      deadPlayerId = !playerA.alive ? 'A' : 'B';
+      soloTimer = SOLO_TIME_LIMIT * FRAME_RATE;
+      const survivor = deadPlayerId === 'A' ? 'B' : 'A';
+      showNotification(survivor,
+        `P${deadPlayerId} 사망! ${SOLO_TIME_LIMIT}초 후 부활 & 배신 30초!`, '#FF9800');
+    }
   }
 
-  // 두 플레이어 모두 사망
-  if (!playerA.alive && !playerB.alive) {
-    _endGame('both_dead');
-    return;
-  }
-
-  // 한 명 사망 (배신 페이즈)
+  // 배신 페이즈: 한 명 사망 → 즉시 종료
   if (phase === PHASE_BETRAYAL) {
-    if (!playerA.alive && playerB.alive) {
-      winner = 'B'; phase = PHASE_END; return;
-    }
-    if (!playerB.alive && playerA.alive) {
-      winner = 'A'; phase = PHASE_END; return;
-    }
+    if (!playerA.alive && playerB.alive) { winner = 'B'; phase = PHASE_END; return; }
+    if (!playerB.alive && playerA.alive) { winner = 'A'; phase = PHASE_END; return; }
   }
+}
 
-  // 협력 페이즈에서 둘 다 사망해야 팀 패배 (한 명은 계속 진행)
-  // (두 플레이어 모두 사망은 위 _endGame('both_dead')에서 처리)
+function _reviveDeadPlayer() {
+  const midR = Math.floor(ROWS/2);
+  const midC = Math.floor(COLS/2);
+  const survivor = deadPlayerId === 'A' ? playerB : playerA;
+  const dead     = deadPlayerId === 'A' ? playerA : playerB;
+
+  // 죽은 플레이어 부활 위치
+  const deadSpawnR = midR + (deadPlayerId === 'A' ? -3 : 3);
+  const deadSpawnC = midC;
+
+  // Voronoi 분할로 살아있는 플레이어 영역 절반을 죽은 플레이어에게 할당
+  voronoiSplit({r:deadSpawnR, c:deadSpawnC}, {r:survivor.r, c:survivor.c});
+
+  const deadOwner = deadPlayerId === 'A' ? OWNER_A : OWNER_B;
+  dead.revive(deadSpawnR, deadSpawnC, deadOwner);
+
+  // 배신 타이머 30초 발동
+  gameTimer = EMERGENCY_BETRAYAL_TIME * FRAME_RATE;
+  betrayalTriggered = true;
+  phase = PHASE_BETRAYAL;
+  playerA.setPhase(PHASE_BETRAYAL);
+  playerB.setPhase(PHASE_BETRAYAL);
+  deadPlayerId = null;
+
+  showBetrayalAnnounce(this);
+  showNotification('A', '부활! 배신 타이머 30초 발동!', '#FF5252');
 }
 
 function _endGame(reason) {
   phase = PHASE_END;
   const counts = countTiles();
-
   if (reason === 'timer') {
-    if (counts.A > counts.B) winner = 'A';
-    else if (counts.B > counts.A) winner = 'B';
-    else winner = 'draw';
-  } else if (reason === 'both_dead') {
+    // 둘 다 살아있으면 영역으로 승부
+    if (playerA.alive && playerB.alive) {
+      if (counts.A > counts.B) winner = 'A';
+      else if (counts.B > counts.A) winner = 'B';
+      else winner = 'draw';
+    } else if (playerA.alive) {
+      winner = 'A';
+    } else if (playerB.alive) {
+      winner = 'B';
+    } else {
+      winner = 'zombie';
+    }
+  } else {
     winner = 'zombie';
   }
 }
 
-// ── 키 입력 ──
 function keyPressed() {
-  if (phase === PHASE_LOBBY && keyCode === 32) {
-    phase = PHASE_COOP;
-    return;
-  }
-  if ((phase === PHASE_END) && (key === 'r' || key === 'R' || keyCode === 82)) {
-    resetGame();
-    return;
-  }
-  if (phase === PHASE_COOP || phase === PHASE_BETRAYAL) {
+  if (phase === PHASE_LOBBY && keyCode === 32) { phase = PHASE_COOP; return; }
+  if (phase === PHASE_END && (key==='r'||key==='R')) { resetGame(); return; }
+  if (phase===PHASE_COOP || phase===PHASE_SOLO || phase===PHASE_BETRAYAL) {
     playerA.handleKeyPressed(keyCode);
     playerB.handleKeyPressed(keyCode);
   }
 }
 
-// ── 마우스 클릭 (결과 화면 재시작 버튼) ──
 function mousePressed() {
-  if (phase === PHASE_END) {
-    const cx = CANVAS_W / 2;
-    const cy = CANVAS_H / 2;
-    if (mouseX > cx - 70 && mouseX < cx + 70 && mouseY > cy + 65 && mouseY < cy + 101) {
-      resetGame();
-    }
-  }
-  if (phase === PHASE_LOBBY) {
-    const cx = CANVAS_W / 2;
-    const cy = CANVAS_H / 2;
-    if (mouseX > cx - 90 && mouseX < cx + 90 && mouseY > cy + 100 && mouseY < cy + 144) {
-      phase = PHASE_COOP;
-    }
-  }
+  const cx=CANVAS_W/2, cy=CANVAS_H/2;
+  if (phase===PHASE_END &&
+      mouseX>cx-80&&mouseX<cx+80&&mouseY>cy+58&&mouseY<cy+96) { resetGame(); }
+  if (phase===PHASE_LOBBY &&
+      mouseX>cx-100&&mouseX<cx+100&&mouseY>cy+80&&mouseY<cy+126) { phase=PHASE_COOP; }
 }
