@@ -8,10 +8,13 @@ let betrayalTriggered = false;
 let winner = null;
 
 // 솔로 페이즈 (한 명 사망 시)
-let soloTimer = 0;          // 솔로 제한 20초 카운트다운
-let deadPlayerId = null;    // 죽은 플레이어 ID
+let soloTimer = 0;
+let deadPlayerId = null;
+
+let _p5instance = null; // p5 인스턴스 저장용
 
 function setup() {
+  _p5instance = this;
   createCanvas(CANVAS_W, CANVAS_H);
   frameRate(FRAME_RATE);
   textFont('monospace');
@@ -22,7 +25,7 @@ function resetGame() {
   initGrid();
   initZombies();
   initPlayers();
-  initTiles(this);
+  initTiles(_p5instance);
   gameTimer = GAME_TOTAL_TIME * FRAME_RATE;
   betrayalTriggered = false;
   winner = null;
@@ -80,7 +83,7 @@ function _triggerBetrayal() {
   playerB.setPhase(PHASE_BETRAYAL);
   for (const t of playerA.tail) setOwner(t.r, t.c, OWNER_A);
   for (const t of playerB.tail) setOwner(t.r, t.c, OWNER_B);
-  showBetrayalAnnounce(this);
+  showBetrayalAnnounce(_p5instance);
 }
 
 function _checkEndConditions(timeLeftSec) {
@@ -93,11 +96,10 @@ function _checkEndConditions(timeLeftSec) {
     const bDead = !playerB.alive;
 
     if (aDead || bDead) {
-      // 솔로 페이즈 진입
       if (phase !== PHASE_SOLO) {
         phase = PHASE_SOLO;
         deadPlayerId = aDead ? 'A' : 'B';
-        soloTimer = SOLO_TIME_LIMIT * FRAME_RATE; // 20초
+        soloTimer = SOLO_TIME_LIMIT * FRAME_RATE;
         showNotification(
           aDead ? 'B' : 'A',
           `P${deadPlayerId} 사망! ${SOLO_TIME_LIMIT}초 후 부활 & 배신 타이머 30초 발동!`,
@@ -110,7 +112,6 @@ function _checkEndConditions(timeLeftSec) {
   if (phase === PHASE_SOLO) {
     soloTimer--;
     if (soloTimer <= 0) {
-      // 죽은 플레이어 부활
       _reviveDeadPlayer();
     }
   }
@@ -123,39 +124,31 @@ function _checkEndConditions(timeLeftSec) {
 }
 
 function _reviveDeadPlayer() {
-  const counts = countTiles();
   const midR = Math.floor(ROWS / 2);
   const midC = Math.floor(COLS / 2);
 
-  // 살아있는 플레이어 영역의 절반을 죽은 플레이어에게 할당
   const survivor = deadPlayerId === 'A' ? playerB : playerA;
   const dead     = deadPlayerId === 'A' ? playerA : playerB;
 
-  // Voronoi로 현재 팀 영역 분할 (살아있는 플레이어 위치 기준)
   const survivorPos = { r: survivor.r, c: survivor.c };
   const deadSpawnR = midR + (deadPlayerId === 'A' ? -3 : 3);
   const deadSpawnC = midC;
   const deadPos = { r: deadSpawnR, c: deadSpawnC };
 
-  // 팀 영역 Voronoi 분할로 절반씩
   voronoiSplit(deadPos, survivorPos);
 
-  // 죽은 플레이어 부활
   const deadOwner = deadPlayerId === 'A' ? OWNER_A : OWNER_B;
   dead.revive(deadSpawnR, deadSpawnC, deadOwner);
   dead.setPhase(PHASE_BETRAYAL);
 
-  // 살아있는 플레이어도 배신 페이즈로
   survivor.setPhase(PHASE_BETRAYAL);
-  const survivorOwner = deadPlayerId === 'A' ? OWNER_B : OWNER_A;
 
-  // 배신 타이머 30초로 세팅
   gameTimer = EMERGENCY_BETRAYAL_TIME * FRAME_RATE;
   betrayalTriggered = true;
   phase = PHASE_BETRAYAL;
   deadPlayerId = null;
 
-  showBetrayalAnnounce(this);
+  showBetrayalAnnounce(_p5instance);
   showNotification('A', '부활! 배신 타이머 30초 발동!', '#FF5252');
 }
 
