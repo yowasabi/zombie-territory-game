@@ -1,6 +1,4 @@
-// tile.js — 랜덤 박스 3종 (게임 시작 시 맵에 고정 배치)
-// 박스 크기: 픽셀 4칸 (2x2 타일) → 플레이어가 근처 2칸 이내면 획득
-
+// tile.js
 let boxes = [];
 
 function initTiles(p) {
@@ -18,9 +16,7 @@ function _placeBoxes(p) {
       attempts++;
       const r = Math.floor(p.random(5, ROWS-5));
       const c = Math.floor(p.random(5, COLS-5));
-      // 시작 중앙 영역 근처 제외
       if (Math.abs(r-midR) < 7 && Math.abs(c-midC) < 9) continue;
-      // 다른 박스와 최소 4타일 간격
       if (boxes.some(b => Math.abs(b.r-r) < 4 && Math.abs(b.c-c) < 4)) continue;
       boxes.push({ r, c, type });
       placed++;
@@ -32,10 +28,9 @@ function updateTiles(p) {}
 
 function drawTiles(p) {
   for (const box of boxes) {
-    // 박스를 2x2 타일 크기(픽셀 4칸)로 그리기
     const x = box.c * TILE_SIZE - TILE_SIZE/2;
     const y = box.r * TILE_SIZE - TILE_SIZE/2;
-    const size = TILE_SIZE * 2; // 2배 크기
+    const size = TILE_SIZE * 2; 
     const blink = Math.sin(p.frameCount * 0.12) > 0;
 
     p.noStroke();
@@ -46,7 +41,6 @@ function drawTiles(p) {
     }
     p.rect(x+1, y+1, size-2, size-2, 6);
 
-    // 아이콘 (2배 크기에 맞게)
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(16);
     p.fill(255);
@@ -60,12 +54,11 @@ function drawTiles(p) {
   }
 }
 
-// 플레이어가 박스 중심 2칸 이내면 획득 (넉넉한 판정)
 function checkTilePickup(player, zombiesArr, phase, p) {
   for (let i = boxes.length-1; i >= 0; i--) {
     const box = boxes[i];
     const dist = Math.abs(box.r - player.r) + Math.abs(box.c - player.c);
-    if (dist <= 1) { // 1타일 이내면 획득
+    if (dist <= 1) { 
       _applyBoxEffect(box, player, phase, p);
       boxes.splice(i, 1);
     }
@@ -75,21 +68,26 @@ function checkTilePickup(player, zombiesArr, phase, p) {
 function _applyBoxEffect(box, player, phase, p) {
   switch (box.type) {
     case BOX_TYPE_MEDICINE: {
-      const owner = phase === PHASE_COOP ? OWNER_TEAM : player.owner;
+      const owner = (phase === PHASE_COOP || phase === PHASE_SOLO) 
+                    ? OWNER_TEAM 
+                    : (player.id === 'A' ? OWNER_A : OWNER_B);
       applyAreaBomb(player.r, player.c, owner);
       player.bombFlash = 20;
-      showNotification(player.id, '약 획득: 보너스 땅이 주어지는 약을 먹었다!', '#43A047');
+      playSoundPowerup();  // 좋은 아이템 소리
+      showNotification(player.id, '💊 약을 먹었다! 보너스 땅이 주어졌다!!', '#43A047');
       break;
     }
     case BOX_TYPE_BLOOD: {
       zombieBloodTimer = ZOMBIE_BLOOD_DURATION;
-      showNotification(player.id, '피 획득: 피를 밟았다 좀비속도가 이제 빨라진다!', '#E53935');
+      playSoundZombie();  // 좀비 소리
+      showNotification(player.id, '🩸 피를 먹었다! 좀비가 빨라진다!!', '#E53935');
       break;
     }
     case BOX_TYPE_ENERGY: {
       player.boostTimer = BOOST_DURATION;
       player.steelTailTimer = STEEL_TAIL_DURATION;
-      showNotification(player.id, '에너지드링크 획득: 속도와 강철꼬리를 갖는 에너지드링크를 마셨다!', '#FFD600');
+      playSoundDrink();  // 마시는 소리
+      showNotification(player.id, '⚡ 에너지드링크를 마셨다! 강철꼬리가 생겼다!!', '#00E676');
       break;
     }
   }
