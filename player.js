@@ -1,11 +1,9 @@
-// player.js — 플레이어 이동, 꼬리, 충돌 판정
-
+// player.js
 class Player {
   constructor(id, startR, startC, keyUp, keyDown, keyLeft, keyRight, initDr, initDc) {
     this.id = id;
     this.r = startR;
     this.c = startC;
-    // 게임 시작 시 자동으로 움직임 (초기 방향 설정)
     this.dr = initDr;
     this.dc = initDc;
     this.nextDr = initDr;
@@ -41,11 +39,12 @@ class Player {
   }
 
   get speed() {
-    return this.boostTimer > 0 ? PLAYER_SPEED * BOOST_MULTIPLIER : PLAYER_SPEED;
+    return (this.boostTimer > 0 ? PLAYER_SPEED * BOOST_MULTIPLIER : PLAYER_SPEED) * 1.2;
   }
 
   update(otherPlayer, zombiesArr, phase, p) {
     if (!this.alive) return;
+    if (betrayalAnnounceFade > 0) return; 
     if (this.boostTimer > 0) this.boostTimer--;
     if (this.steelTailTimer > 0) this.steelTailTimer--;
     if (this.bombFlash > 0) this.bombFlash--;
@@ -67,16 +66,11 @@ class Player {
     let nr = this.r + this.dr;
     let nc = this.c + this.dc;
 
-    // 맵 경계: 이동 차단, 현재 위치 유지, 방향 초기화
     if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) {
-      this.nextDr = 0;
-      this.nextDc = 0;
-      this.dr = 0;
-      this.dc = 0;
+      this.nextDr = 0; this.nextDc = 0; this.dr = 0; this.dc = 0;
       return;
     }
 
-    // 꼬리 관리
     const onOwned = getOwner(this.r, this.c) === this.owner;
     if (onOwned) {
       if (this.tail.length > 0) {
@@ -88,47 +82,39 @@ class Player {
       this.tail.push({ r: this.r, c: this.c });
     }
 
-    // 자기 꼬리 충돌 → 죽음 (강철꼬리면 무적)
     if (this.tail.some(t => t.r === nr && t.c === nc)) {
       if (this.steelTailTimer <= 0) { this._die(); return; }
     }
 
-    // 머리끼리 충돌 → 죽지 않고 밀려남
     if (otherPlayer && otherPlayer.alive && otherPlayer.r === nr && otherPlayer.c === nc) {
-      // 서로 반대 방향으로 밀림
       this.nextDr = -this.dr;
       this.nextDc = -this.dc;
-      return; // 이동 취소
+      return;
     }
 
-    // 상대 꼬리 충돌 → 꼬리 끊기 → 상대 즉사 (모든 페이즈, 강철꼬리 예외)
-    if (otherPlayer && otherPlayer.alive) {
+    if (phase === PHASE_BETRAYAL && otherPlayer && otherPlayer.alive) {
       const hitIdx = otherPlayer.tail.findIndex(t => t.r === nr && t.c === nc);
       if (hitIdx !== -1) {
         if (otherPlayer.steelTailTimer > 0) {
-          // 상대 강철꼬리: 내가 밀려남
           this.nextDr = -this.dr;
           this.nextDc = -this.dc;
           return;
         } else {
-          // 꼬리 끊기 → 상대 즉사
           otherPlayer._cutTailAt(nr, nc);
         }
       }
     }
 
-    // 좀비 본체와 머리 충돌 → 밀려남 (죽지 않음)
     for (const z of zombiesArr) {
       if (!z.alive) continue;
       if (z.r === nr && z.c === nc) {
-        // 좀비 본체와 머리 충돌: 밀려남
         this.nextDr = -this.dr;
         this.nextDc = -this.dc;
         return;
       }
-      // 좀비 꼬리 밟으면 → 좀비 사망 (플레이어 생존)
-      if (z.tail.some(t => t.r === nr && t.c === nc)) {
-        z.cutTailAt(nr, nc);
+      const zTailIdx = z.tail.findIndex(t => t.r === nr && t.c === nc);
+      if (zTailIdx !== -1) {
+        z.cutTailAt(nr, nc); 
         break;
       }
     }
@@ -138,6 +124,8 @@ class Player {
   }
 
   _cutTailAt(r, c) {
+    if (this.steelTailTimer > 0) return;
+
     const idx = this.tail.findIndex(t => t.r === r && t.c === c);
     if (idx !== -1) {
       for (let i = idx; i < this.tail.length; i++) {
@@ -168,7 +156,6 @@ class Player {
 
   draw(p) {
     if (!this.alive) return;
-    // 꼬리
     const tailCol = this.steelTailTimer > 0 ? '#B0BEC5' : this.displayColor;
     p.noStroke();
     for (const t of this.tail) {
@@ -200,11 +187,9 @@ let playerA, playerB;
 function initPlayers() {
   const midR = Math.floor(ROWS/2);
   const midC = Math.floor(COLS/2);
-  // 시작 시 자동으로 움직임: A는 왼쪽, B는 오른쪽
   playerA = new Player('A', midR, midC-2, 87, 83, 65, 68, 0, -1);
   playerB = new Player('B', midR, midC+2, 38, 40, 37, 39, 0,  1);
 
-  // 공동 시작 영역
   for (let r = midR-2; r <= midR+2; r++)
     for (let c = midC-4; c <= midC+4; c++)
       setOwner(r, c, OWNER_TEAM);
